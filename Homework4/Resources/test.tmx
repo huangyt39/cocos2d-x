@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="32" tileheight="32" infinite="0" nextobjectid="1">
+ <tileset firstgid="1" source="Tiled/block1.tsx"/>
+ <tileset firstgid="2" source="ttt.tsx"/>
+ <tileset firstgid="2" source="Tiled/ice1.tsx"/>
+ <tileset firstgid="3" source="Tiled/block2.tsx"/>
+ <layer name="块层 1" width="10" height="10">
+  <data encoding="base64" compression="zlib">
+   eJyNkFEKACAMQue6/51jsEAeG/QhNU2zFBGnkY3ay7gf3c9Nus+y9WlaMnPw0uf3JvI0aPRO3NaP+fwXduR7nGfPwgWl1ADG
+  </data>
+ </layer>
+ <layer name="块层 2" width="10" height="10">
+  <data encoding="base64" compression="zlib">
+   eJxjYKA9YKKDHeTaz0SEGmrbiQ8AAAfgAAs=
+  </data>
+ </layer>
+</map>
