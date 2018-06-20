@@ -53,7 +53,6 @@ private:
   bool shooted;
   bool isPreparing;
   int speed;
-  PhysicsJointDistance* springJoint;
 };
 
 #endif // __HIT_BRICK_H__

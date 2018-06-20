@@ -17,7 +17,7 @@ Scene* HitBrick::createScene() {
 
   // Debug 模式
   scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
-  scene->getPhysicsWorld()->setGravity(Vec2(0, -300.0f));
+  scene->getPhysicsWorld()->setGravity(Vec2(0, 0));
   auto layer = HitBrick::create();
   layer->setPhysicsWorld(scene->getPhysicsWorld());
   layer->setJoint();
@@ -54,7 +54,7 @@ bool HitBrick::init() {
 
   isPreparing = false;
   onBall = true;
-  speed = 10;
+  speed = 15;
   shooted = false;
   spFactor = 0;
   return true;
@@ -63,10 +63,10 @@ bool HitBrick::init() {
 // 关节连接，固定球与板子
 // Todo
 void HitBrick::setJoint() {
-	springJoint = PhysicsJointDistance::construct(
-		ball->getPhysicsBody(), player->getPhysicsBody(),
-		ball->getAnchorPoint(), player->getAnchorPoint());
-	m_world->addJoint(springJoint);
+	joint1 = PhysicsJointPin::construct(
+		player->getPhysicsBody(),ball->getPhysicsBody(),
+		Vec2(0, player->getContentSize().height / 2 - 20.0f), Vec2(0, 0));
+	m_world->addJoint(joint1);
 }
 
 
@@ -96,7 +96,7 @@ void HitBrick::addSprite() {
   shipbody->setCategoryBitmask(0xFFFFFFFF);
   shipbody->setCollisionBitmask(0xFFFFFFFF);
   shipbody->setContactTestBitmask(0xFFFFFFFF);
-  shipbody->setTag(1);
+  ship->setTag(1);
   shipbody->setDynamic(false);  // ??????岻?????????, ????????????б??
   ship->setPhysicsBody(shipbody);
   this->addChild(ship, 1);
@@ -137,28 +137,27 @@ void HitBrick::addPlayer() {
   player->setPosition(Vec2(xpos, ship->getContentSize().height - player->getContentSize().height*0.1f));
   // 设置板的刚体属性
   // Todo
-  auto playerPhysicsBody = PhysicsBody::createBox(Size(player->getContentSize().width, player->getContentSize().height), PhysicsMaterial(20.0f, 1.0f, 20.0f));
+  auto playerPhysicsBody = PhysicsBody::createBox(Size(player->getContentSize().width + 4.0f, player->getContentSize().height), PhysicsMaterial(9999999.0f, 1.0f, 5.0f));
   playerPhysicsBody->setDynamic(true);
   player->setPhysicsBody(playerPhysicsBody);
 
-  this->addChild(player, 2);
+  this->addChild(player, 1);
   
   ball = Sprite::create("ball.png");
-  auto ballPhysicsBody = PhysicsBody::createCircle(ball->getContentSize().width / 2, PhysicsMaterial(0.1f, 1.0f, 1.0f), Vec2(0, 0));
+  auto ballPhysicsBody = PhysicsBody::createCircle(ball->getContentSize().width / 2, PhysicsMaterial(1.0f, 1.0f, 1.0f), Vec2(0, 0));
   ballPhysicsBody->setDynamic(true);
   ball->setPhysicsBody(ballPhysicsBody);
   ball->setTag(2);
-  //ball->setPosition(Vec2(xpos, player->getPosition().y + ball->getContentSize().height*0.1f));
-  ball->setPosition(Vec2(xpos, player->getPosition().y + 36.7f));
+  ball->setPosition(Vec2(xpos, player->getPosition().y + ball->getContentSize().height*0.1f));
+  //ball->setPosition(Vec2(xpos, player->getPosition().y + 36.7f));
   ball->setScale(0.1f, 0.1f);
   // 设置球的刚体属性
   // Todo
-  ball->getPhysicsBody()->setCategoryBitmask(0x03);
-  ball->getPhysicsBody()->setCollisionBitmask(0x03);
-  ball->getPhysicsBody()->setContactTestBitmask(0x03);
+  ball->getPhysicsBody()->setCategoryBitmask(0xFFFFFFFF);
+  ball->getPhysicsBody()->setCollisionBitmask(0xFFFFFFFF);
+  ball->getPhysicsBody()->setContactTestBitmask(0xFFFFFFFF);
 
-
-  addChild(ball, 3);
+  addChild(ball, 1);
   
 }
 
@@ -167,24 +166,35 @@ void HitBrick::addPlayer() {
 void HitBrick::update(float dt) {
 	if (isMove)
 		this->movePlayer(movekey);
-	if (isPreparing && speed <= 20 && !shooted) {
+	else {
+		player->getPhysicsBody()->setVelocity(Vec2(0, 0));
+	}
+	if (isPreparing && speed <= 35 && !shooted) {
 		speed++;
 	}
+	if (shooted && (ball->getPhysicsBody()->getVelocity().y < speed * 10 && ball->getPhysicsBody()->getVelocity().y > -speed * 10)) {
+		if(ball->getPhysicsBody()->getVelocity().y > 0) ball->getPhysicsBody()->setVelocity(Vec2(ball->getPhysicsBody()->getVelocity().x, speed * 10));
+		else ball->getPhysicsBody()->setVelocity(Vec2(ball->getPhysicsBody()->getVelocity().x, -speed * 10));
+	}
+
+	/*if (player->getPosition().x < 5.0f && player->getPosition().x > visibleSize.width) {
+		player->getPhysicsBody()->setVelocity(Vec2(0, 0));
+	}*/
 }
 
 void HitBrick::movePlayer(char movekey) {
 	auto nowPoc = player->getPosition();
 	switch (movekey) {
 	case 'A':
-		if (player->getPosition().x - 10.0f > 100.0f) {
-			player->runAction(MoveBy::create(0.2f, Vec2(-10.0f, 0)));
-			if (!shooted) ball->runAction(MoveBy::create(0.2f, Vec2(-10.0f, 0)));
+		if (player->getPosition().x > 100.0f) {
+			player->getPhysicsBody()->setVelocity(Vec2(-500.0f, 0));
+			//if (!shooted) ball->runAction(MoveBy::create(0.2f, Vec2(-10.0f, 0)));
 		}
 		break;
 	case 'D':
-		if (player->getPosition().x + 10.0f < visibleSize.width - 100.0f) {
-			player->runAction(MoveBy::create(0.2f, Vec2(10.0f, 0)));
-			if (!shooted) ball->runAction(MoveBy::create(0.2f, Vec2(10.0f, 0)));
+		if (player->getPosition().x < visibleSize.width - 100.0f) {
+			player->getPhysicsBody()->setVelocity(Vec2(500.0f, 0));
+			//if (!shooted) ball->runAction(MoveBy::create(0.2f, Vec2(10.0f, 0)));
 		}
 		break;
 	}
@@ -206,11 +216,11 @@ for (int i = 0; i < 3; i++) {
 		box->setTag(3);
 		box->setPosition(cw + box->getContentSize().width/2, visibleSize.height - box->getContentSize().height/2 - i * box->getContentSize().height);
 		
-		box->getPhysicsBody()->setCategoryBitmask(0x03);
-		box->getPhysicsBody()->setCollisionBitmask(0x03);
-		box->getPhysicsBody()->setContactTestBitmask(0x03);
+		box->getPhysicsBody()->setCategoryBitmask(0xFFFFFFFF);
+		box->getPhysicsBody()->setCollisionBitmask(0xFFFFFFFF);
+		box->getPhysicsBody()->setContactTestBitmask(0xFFFFFFFF);
 
-		this->addChild(box, 3);
+		this->addChild(box, 1);
 		cw += box->getContentSize().width;
 	}
  }
@@ -271,13 +281,35 @@ bool HitBrick::onConcactBegin(PhysicsContact & contact) {
 	auto nodeB = c2->getBody()->getNode();
 
 	if (nodeA && nodeB) {
-		if (nodeA->getTag() == 3) {
+		if (nodeA->getTag() == 3 && nodeB->getTag() == 2) {
+			auto particle = ParticleExplosion::create();
+			particle->setPosition(nodeA->getPositionX(), nodeA->getPositionY());
+			particle->setScale(0.5f);
+			particle->setDuration(1);
+			particle->setLife(0.5f);
+			addChild(particle);
+
 			nodeA->removeFromParent();
 			ball->getPhysicsBody()->setVelocity(Vec2(cocos2d::random(-200, 200), ball->getPhysicsBody()->getVelocity().y));
+			if (speed < 80) speed += 3.0f;
 		}
-		else if (nodeB->getTag() == 3) {
+		else if (nodeB->getTag() == 3 && nodeA->getTag() == 2) {
+			auto particle = ParticleExplosion::create();
+			particle->setPosition(nodeB->getPositionX(), nodeB->getPositionY());
+			particle->setScale(0.5f);
+			particle->setDuration(1);
+			particle->setLife(0.5f);
+			addChild(particle);
+
 			nodeB->removeFromParent();
 			ball->getPhysicsBody()->setVelocity(Vec2(cocos2d::random(-200, 200), ball->getPhysicsBody()->getVelocity().y));
+			if (speed < 80) speed += 3.0f;
+		}
+		else if (nodeB->getTag() == 1 && nodeA->getTag() == 2) {
+			GameOver();
+		}
+		else if (nodeA->getTag() == 1 && nodeB->getTag() == 2) {
+			GameOver();
 		}
 	}
 
@@ -292,6 +324,7 @@ void HitBrick::GameOver() {
 	_eventDispatcher->removeAllEventListeners();
 	ball->getPhysicsBody()->setVelocity(Vec2(0, 0));
 	player->getPhysicsBody()->setVelocity(Vec2(0, 0));
+	isMove = false;
   SimpleAudioEngine::getInstance()->stopBackgroundMusic("bgm.mp3");
   SimpleAudioEngine::getInstance()->playEffect("gameover.mp3", false);
 
@@ -331,7 +364,7 @@ void HitBrick::exitCallback(Ref * pSender) {
 void HitBrick::fire() {
 	if (!shooted) {
 		shooted = true;
-		springJoint->removeFormWorld();
+		joint1->removeFormWorld();
 		ball->getPhysicsBody()->setVelocity(Vec2(cocos2d::random(-200, 200), speed * 30));
 	}
 }
